@@ -1,0 +1,85 @@
+def get_positive_float(prompt):
+  """Prompt the user for a positive float with error checking or allow breaking the input loop."""
+  while True:
+      input_str = input(prompt + " (or type 'done' to finish): ")
+      if input_str.lower() == 'done':
+          return None  # User chose to stop entering more data.
+      try:
+          value = float(input_str)
+          if value <= 0:
+              print("Please enter a positive number greater than zero.")
+          else:
+              return value
+      except ValueError:
+          print("Invalid input. Please enter a valid number or 'done' to finish.")
+
+def get_positive_integer(prompt, allow_zero=False):
+  """Prompt the user for a positive integer with error checking or allow zero if specified."""
+  while True:
+      input_str = input(prompt)
+      if allow_zero and input_str == '0':
+          return 0
+      try:
+          value = int(input_str)
+          if value < 0 or (value == 0 and not allow_zero):
+              print("Please enter a positive integer greater than zero.")
+          else:
+              return value
+      except ValueError:
+          print("Invalid input. Please enter a valid integer.")
+
+def calculate_mtbf_series():
+  total_inverse_mtbf = 0
+  count = 0
+  while True:
+      mtbf = get_positive_float(f"Enter the MTBF for component #{count+1} (hours) [use scientific notation e.g., 1e6 for 1x10^6]")
+      if mtbf is None:  # Check if the user decided to finish entering data.
+          if count == 0:  # No components were entered.
+              print("No components entered for series calculation.")
+              return None
+          break
+      quantity = get_positive_integer(f"Enter the quantity of component #{count+1} (or 0 to skip this component): ", allow_zero=True)
+      if quantity > 0:
+          for _ in range(quantity):
+              total_inverse_mtbf += 1/mtbf
+      else:
+          print("Component skipped due to 0 quantity.")
+      count += 1
+      cont = input("Add another type of component in series? (yes/no): ")
+      if cont.lower() != 'yes':
+          break
+  if total_inverse_mtbf > 0:
+      mtbf_series = 1 / total_inverse_mtbf
+      return mtbf_series
+  else:
+      return None
+
+def calculate_mtbf_parallel(mtbf, quantity):
+  sum_series = sum(1/n for n in range(1, quantity + 1))
+  return mtbf * sum_series
+
+def main():
+  calculation_type = input("Will the calculation be done in parallel or series? (parallel/series): ")
+
+  if calculation_type.lower() == 'parallel':
+      mtbf = get_positive_float("Enter the MTBF for the component (hours) [use scientific notation e.g., 1e6 for 1x10^6]")
+      if mtbf is not None:
+          quantity = get_positive_integer("Enter the quantity of this component: ")
+          if quantity > 0:
+              mtbf_result = calculate_mtbf_parallel(mtbf, quantity)
+              print(f"The total MTBF for {quantity} parallel components is: {format(mtbf_result, '.2e')} hours")
+          else:
+              print("Exiting parallel calculation due to 0 quantity.")
+      else:
+          print("Exiting parallel calculation.")
+  elif calculation_type.lower() == 'series':
+      mtbf_result = calculate_mtbf_series()
+      if mtbf_result is not None:
+         print(f"The total MTBF for components in series is: {format(mtbf_result, '.2e')} hours")
+      else:
+          print("Exiting series calculation due to invalid input.")
+  else:
+      print("Invalid calculation type. Please enter 'parallel' or 'series'.")
+
+if __name__ == "__main__":
+  main()
